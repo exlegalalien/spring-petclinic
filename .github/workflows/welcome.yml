@@ -1,11 +1,6 @@
 # This enables the "Run workflow" button in the GitHub UI
 on:
   workflow_dispatch:
-    inputs:
-      name_input:
-        description: 'Who should the action greet?'
-        required: true
-        default: 'GitHub User'
 
 jobs:
   greet-on-demand:
