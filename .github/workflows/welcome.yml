@@ -13,6 +13,6 @@ jobs:
       # Step 2: Reference your custom action
       # This assumes your action.yml is in the root or a specific folder
       - name: Execute Welcome Action
-        uses: CybersecGard/welcome-action@eadbac49c46992c8ca0ec649616c3af41b929028
+        uses: CybersecGard/welcome-action@af9062dad994b719700256cfcfc86390533c139a
         with:
           who-to-greet: ${{ github.actor }}
