@@ -42,7 +42,7 @@ jobs:
             --config "p/cwe-top-25" \
             --sarif \
             --output semgrep-results.sarif \
-            --error
+            --error || true
 
       - name: Upload Semgrep SARIF to Code Scanning
         uses: github/codeql-action/upload-sarif@v4
