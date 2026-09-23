@@ -31,25 +31,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Run Opengrep SAST Scan
+        uses: opengrep/opengrep-action@v1
         with:
-          python-version: '3.11'
-
-      - name: Install Opengrep
-        run: pip install opengrep
-
-      - name: Run Opengrep SAST Scan (Java / Spring / Polyglot)
-        run: |
-          opengrep scan \
-            --config "p/default" \
-            --config "p/java" \
-            --config "p/owasp-top-ten" \
-            --config "p/cwe-top-25" \
-            --sarif \
-            --output opengrep-results.sarif \
-            --error
-
+          config: >-
+            p/default
+            p/java
+            p/owasp-top-ten
+            p/cwe-top-25
+          generateSarif: "1"
+          
       # Upload SARIF directly into GitHub Code Scanning (PR Annotations)
       - name: Upload Opengrep SARIF to Code Scanning
         uses: github/codeql-action/upload-sarif@v4
