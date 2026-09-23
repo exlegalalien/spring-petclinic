@@ -66,7 +66,9 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .
 
       - name: Create Scan Results Directory
         run: mkdir -p kics-results
@@ -101,10 +103,10 @@ jobs:
             echo "High Findings:     $HIGH_COUNT"
             echo "=========================================="
 
-            # if [ "$CRITICAL_COUNT" -gt 0 ] || [ "$HIGH_COUNT" -gt 0 ]; then
-            #   echo "::error::KICS detected $CRITICAL_COUNT Critical and $HIGH_COUNT High severity IaC vulnerabilities!"
-            #   exit 1
-            # fi
+            if [ "$CRITICAL_COUNT" -gt 0 ] || [ "$HIGH_COUNT" -gt 0 ]; then
+              echo "::error::KICS detected $CRITICAL_COUNT Critical and $HIGH_COUNT High severity IaC vulnerabilities!"
+              exit 1
+            fi
           else
             echo "::warning::kics-results/results.json not found. Skipping threshold gate."
           fi
