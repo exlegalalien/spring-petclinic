@@ -1,4 +1,4 @@
-name: "DevSecOps Security Pipeline"
+name: "DevSecOps Security Pipeline (Maven & Gradle)"
 
 on:
   workflow_dispatch:
@@ -27,18 +27,17 @@ jobs:
       contents: read
       security-events: write
     container:
-      # Official Opengrep public runner image
       image: opengrep/opengrep:latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # Pin to v4.2.2 commit SHA
+        uses: actions/checkout@7.0.1
 
-      - name: Run Opengrep SAST Scan
+      - name: Run Opengrep SAST Scan (Java / Spring / Polyglot)
         run: |
-          # Scan against OWASP Top 10 and CWE Top 25 rulesets, outputting SARIF
           opengrep scan \
             --config "p/default" \
+            --config "p/java" \
             --config "p/owasp-top-ten" \
             --config "p/cwe-top-25" \
             --sarif \
@@ -47,14 +46,40 @@ jobs:
 
       # Upload SARIF directly into GitHub Code Scanning (PR Annotations)
       - name: Upload Opengrep SARIF to Code Scanning
-        uses: github/codeql-action/upload-sarif@b56ba49b26e50535fa1e7f7db0f4f7b4765d80d1 # Pin to v3.28.10
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'opengrep-results.sarif'
           category: 'opengrep-sast'
 
   # --------------------------------------------------------------------------
-  # 2. Infrastructure as Code (IaC) - Checkmarx KICS
+  # 2. Build Verification & Dependency Graph Generation
+  # --------------------------------------------------------------------------
+  build-and-verify:
+    name: "Build & Dependency Verification"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@7.0.1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@6.0.1
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle' # Automatically caches Gradle or Maven dependencies
+
+      - name: Verify Gradle Build (if gradlew exists)
+        run: |
+          if [ -f "./gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew check -x test
+          elif [ -f "./pom.xml" ]; then
+            mvn compile -DskipTests
+          fi
+
+  # --------------------------------------------------------------------------
+  # 3. Infrastructure as Code (IaC) - Checkmarx KICS
   # --------------------------------------------------------------------------
   kics-iac-scan:
     name: "Checkmarx KICS IaC Scan"
@@ -66,22 +91,22 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@v7.0.1
 
       - name: Create Scan Results Directory
         run: mkdir -p kics-results
 
       - name: Run Checkmarx KICS Action
-        uses: checkmarx/kics-github-action@246f88126fd9a7217fb0dd51121d5c2199fa68a4 # Pin to v2.1.3
+        uses: checkmarx/kics-github-action@v2.1.20
         with:
           path: './'
           output_path: 'kics-results/'
           output_formats: 'json,sarif'
-          ignore_on_exit: 'results' # Prevent early abort so issues and SARIF upload finish
+          ignore_on_exit: 'results'
           fail_on: 'high,critical'
 
       - name: Upload KICS SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@b56ba49b26e50535fa1e7f7db0f4f7b4765d80d1
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'kics-results/results.sarif'
